@@ -10,10 +10,6 @@ jobs:
     runs-on: self-hosted
     environment: production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: main
       -
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -29,3 +25,4 @@ jobs:
         with:
           push: true
           tags: vollborn/jetbrains-gateway-ssh:latest
+          file: src/Dockerfile
