@@ -1,13 +1,12 @@
-version: "3.1"
-
 services:
-  jetbrains-gateway-ssh:
-    image: jetbrains-gateway-ssh
-    build: src
-    environment:
-      SSH_USERNAME: "${SSH_USERNAME:-jetbrains}"
-      SSH_PASSWORD: "${SSH_PASSWORD:-jetbrains}"
-    volumes:
-      - "./home:/opt/home"
-    ports:
-      - "${SSH_PORT:-22}:22"
+    jetbrains-gateway-ssh:
+        image: jetbrains-gateway-ssh
+        build: src
+        environment:
+            SSH_USERNAME: "${SSH_USERNAME:-jetbrains}"
+            SSH_PASSWORD: "${SSH_PASSWORD:-jetbrains}"
+        volumes:
+            - "./home:/opt/home"
+            # - "./setup.sh:/opt/setup.sh"
+        ports:
+            - "${SSH_PORT:-22}:22"

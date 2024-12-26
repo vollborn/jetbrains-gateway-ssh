@@ -7,7 +7,6 @@ JetBrains Gateway SSH was made to provide a clean SSH server for JetBrains Gatew
 JetBrains Gateway SSH is pushed to Docker Hub. You can use this docker-compose.yml example to quickly start a container:
 
 ```
-version: "3.1"
 services:
   jetbrains-gateway-ssh:
     image: vollborn/jetbrains-gateway-ssh
@@ -16,6 +15,7 @@ services:
       SSH_PASSWORD: "${SSH_PASSWORD:-jetbrains}"
     volumes:
       - "./home:/opt/home"
+      # - "./setup.sh:/opt/setup.sh"
     ports:
       - "${SSH_PORT:-22}:22"
 ```
@@ -30,17 +30,17 @@ SSH_PASSWORD=myownpassword
 
 ## Development
 
-1. Clone the repository
+### 1. Clone the repository
 ```shell
 git clone https://github.com/vollborn/jetbrains-gateway-ssh.git
 ```
 
-2. Build the container
+### 2. Build the container
 ```shell
 docker-compose build
 ```
 
-3. Copy .env.example to .env
+### 3. Copy .env.example to .env
 ```shell
 # Linux
 cp .env.example .env
@@ -49,7 +49,7 @@ cp .env.example .env
 copy .env.example .env
 ```
 
-4. Change the default password in the .env file.
+### 4. Change the default password in the .env file.
 ```shell
 # Linux
 vim .env
@@ -65,7 +65,12 @@ SSH_USERNAME=jetbrains
 SSH_PASSWORD=jetbrains
 ```
 
-5. Start the Docker
+### 5. Optional: setup script
+
+Do you have additional dependencies you need to install? Just copy the `setup.sh.example`, add your dependencies and mount it as `/opt/setup.sh`.
+<br>The script will run every time the container starts.
+
+### 6. Start the Docker
 ```shell
 docker-compose up
 ```

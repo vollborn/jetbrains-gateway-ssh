@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo ""
+echo "Installing additional dependencies..."
+echo ""
+
+apt-get update
+apt-get install -y vim git
+
+echo ""
+echo "Additional dependencies installed."
+echo ""
