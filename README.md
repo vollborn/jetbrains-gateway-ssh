@@ -8,19 +8,19 @@ JetBrains Gateway SSH is pushed to Docker Hub. You can use this `docker-compose.
 
 ```yaml
 services:
-  jetbrains-gateway-ssh:
-    image: vollborn/jetbrains-gateway-ssh
-    environment:
-      SSH_USERNAME: "${SSH_USERNAME:-jetbrains}"
-      SSH_PASSWORD: "${SSH_PASSWORD:-jetbrains}"
-      SSH_UID: "${SSH_UID:-1001}"
-      SSH_GID: "${SSH_GID:-1001}"
-      FIX_HOME_OWNERSHIP: "${FIX_HOME_OWNERSHIP:-false}"
-    volumes:
-      - "./home:/opt/home"
-      # - "./setup.sh:/opt/setup.sh"
-    ports:
-      - "${SSH_PORT:-22}:22"
+    jetbrains-gateway-ssh:
+        image: vollborn/jetbrains-gateway-ssh
+        environment:
+            SSH_USERNAME: "${SSH_USERNAME:-jetbrains}"
+            SSH_PASSWORD: "${SSH_PASSWORD:-jetbrains}"
+            SSH_UID: "${SSH_UID:-1001}"
+            SSH_GID: "${SSH_GID:-1001}"
+            FIX_HOME_OWNERSHIP: "${FIX_HOME_OWNERSHIP:-false}"
+        volumes:
+            - "./home:/opt/home"
+            # - "./setup.sh:/opt/setup.sh"
+        ports:
+            - "${SSH_PORT:-22}:22"
 ```
 
 You should change the default password and username by creating an `.env` file with your own credentials:
@@ -114,9 +114,11 @@ FIX_HOME_OWNERSHIP=true
 
 Be careful when enabling this option with an existing host directory, especially if you mount your real home directory.
 
+This option does not control `.ssh` permission checks. If `/opt/home/.ssh` or `/opt/home/.ssh/authorized_keys` exists, the startup script checks whether they match the configured `SSH_UID`, `SSH_GID`, and required SSH permissions.
+
 ## SSH key authentication
 
-To use SSH key authentication, mount a home directory containing an `.ssh/authorized_keys` file.
+To use SSH key authentication, provide an `.ssh/authorized_keys` file inside `/opt/home`.
 
 Example host structure:
 
@@ -141,12 +143,18 @@ chmod 700 ./home/.ssh
 chmod 600 ./home/.ssh/authorized_keys
 ```
 
-If the mounted directory should belong to a specific host user, make sure ownership matches the configured `SSH_UID` and `SSH_GID`.
+If `/opt/home/.ssh` exists, the startup script checks whether it is owned by the configured `SSH_UID:SSH_GID` and whether it has mode `700`.
+
+If `/opt/home/.ssh/authorized_keys` exists, the startup script checks whether it is owned by the configured `SSH_UID:SSH_GID` and whether it has mode `600`.
+
+The `.ssh` directory and `authorized_keys` file are optional. If they do not exist, the container will still start.
 
 Example:
 
 ```shell
 sudo chown -R 3000:3000 ./home
+chmod 700 ./home/.ssh
+chmod 600 ./home/.ssh/authorized_keys
 ```
 
 Then configure:
@@ -157,7 +165,32 @@ SSH_GID=3000
 SSH_PASSWORD=
 ```
 
-With an empty `SSH_PASSWORD`, the container will skip password setup and allow SSH key based authentication.
+With an empty `SSH_PASSWORD`, the container will skip password setup and allow SSH key based authentication if a valid `authorized_keys` file is present.
+
+## Mounting only `authorized_keys`
+
+You can mount only the `authorized_keys` file instead of mounting the whole `.ssh` directory.
+
+Example:
+
+```yaml
+services:
+  jetbrains-gateway-ssh:
+    image: vollborn/jetbrains-gateway-ssh
+    environment:
+      SSH_USERNAME: jetbrains
+      SSH_PASSWORD: ""
+      SSH_UID: "3000"
+      SSH_GID: "3000"
+      FIX_HOME_OWNERSHIP: "false"
+    volumes:
+      - "/home/username/.ssh/authorized_keys:/opt/home/.ssh/authorized_keys"
+      - "/home/username/project:/opt/home/project"
+    ports:
+      - "2222:22"
+```
+
+When a single file is mounted to `/opt/home/.ssh/authorized_keys`, Docker may create the parent `/opt/home/.ssh` directory inside the container. If that directory exists, the startup script checks and fixes its owner and permissions when needed.
 
 ## Bind-mounted home directory warning
 
@@ -191,6 +224,20 @@ FIX_HOME_OWNERSHIP=true
 ```
 
 the container will recursively run ownership changes on `/opt/home`. This may modify ownership of files on the host through the bind mount.
+
+If `FIX_HOME_OWNERSHIP=false`, the startup script will not recursively change ownership of `/opt/home`. It will only check `.ssh` and `authorized_keys` if they exist.
+
+## Existing `/opt/home` directory
+
+If `/opt/home` already exists, the startup script creates the SSH user without trying to create the home directory again.
+
+This avoids warnings such as:
+
+```text
+The home directory `/opt/home' already exists. Not touching this directory.
+```
+
+The existing `/opt/home` directory can come from a Docker bind mount.
 
 ## Example: password authentication
 
@@ -280,6 +327,7 @@ FIX_HOME_OWNERSHIP=false
 ```
 
 For SSH key only authentication:
+
 ```env
 SSH_PORT=22
 SSH_USERNAME=jetbrains
