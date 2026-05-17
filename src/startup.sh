@@ -2,9 +2,9 @@
 set -e
 
 SSH_USERNAME="${SSH_USERNAME:-jetbrains}"
-SSH_PASSWORD="${SSH_PASSWORD:-jetbrains}"
 SSH_UID="${SSH_UID:-1001}"
 SSH_GID="${SSH_GID:-1001}"
+SSH_PASSWORD="${SSH_PASSWORD:-}"
 FIX_HOME_OWNERSHIP="${FIX_HOME_OWNERSHIP:-false}"
 
 SSH_HOME="/opt/home"
@@ -76,6 +76,9 @@ if ! id "${SSH_USERNAME}" > /dev/null 2>&1; then
     --gecos "" \
     "${SSH_USERNAME}"
 fi
+
+echo "Checking home directory ownership..."
+ensure_owner "${SSH_HOME}" "${SSH_UID}" "${SSH_GID}"
 
 if [ -n "${SSH_PASSWORD}" ]; then
   echo "Changing password..."
